@@ -16,52 +16,46 @@
  */
 package org.fusesource.mvnplugins.provision;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.manager.WagonManager;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.AbstractArtifactResolutionException;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
+import java.io.File;
+
 import org.apache.maven.model.Build;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.util.FileUtils;
-
-import java.io.File;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * A Maven Mojo to install a provision in the local repo if its not already there and then
  * provision an artifact into an output directory
  *
  * @author <a href="http://macstrac.blogspot.com">James Strachan</a>
- * @goal provision
- * @execute phase="install"
  */
+@Mojo(defaultPhase = LifecyclePhase.INSTALL, name="provision")
+@Execute(phase=LifecyclePhase.INSTALL)
 public class ProvisionMojo extends AbstractMojo {
 
     /**
      * The directory where the output files will be located.
-     *
-     * @parameter expression="${outputDirectory}
-     * @required
      */
-    private File outputDirectory;
+	@Parameter(defaultValue = "${outputDirectory}", required = true)
+    protected File outputDirectory;
 
 
     /**
      * The maven project.
      *
-     * @parameter expression="${project}"
-     * @required
-     * @readonly
      */
+	@Parameter(defaultValue = "${project}", required = true, readonly = true)
     protected MavenProject project;
 
+	
+	@Parameter(defaultValue = "${project.build.finalName}", required = true)
+	protected String finalName;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         if ("pom".equals(project.getPackaging())) {
@@ -73,7 +67,10 @@ public class ProvisionMojo extends AbstractMojo {
             getLog().debug("No Build available in this Project");
             return;
         }
-        File file = new File(build.getDirectory(), build.getFinalName() + "." + getArtifactExtension());
+        
+        
+        
+        File file = new File(build.getDirectory(), finalName + "." + getArtifactExtension());
         getLog().debug("Trying to detect: " + file.getAbsolutePath());
 
         if (file.exists()) {
